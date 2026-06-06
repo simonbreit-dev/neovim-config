@@ -37,6 +37,10 @@ vim.opt.listchars = { tab = '» ', trail = '·', nbsp = '␣' }
 
 -- Sync clipboard between OS and Neovim after UI startup
 vim.schedule(function()
+  if vim.env.SSH_TTY or vim.env.SSH_CONNECTION then
+    vim.g.clipboard = 'osc52'
+  end
+
   vim.o.clipboard = 'unnamedplus'
 end)
 
@@ -644,9 +648,6 @@ require('lazy').setup({
   { 'sindrets/diffview.nvim', cmd = { 'DiffviewOpen', 'DiffviewFileHistory' } },
 
   -- Debugging from Kickstart, if the file exists in your config.
-  -- Comment this out if you do not have lua/kickstart/plugins/debug.lua.
-  require 'kickstart.plugins.debug',
-
   -- Optional modular custom plugins:
   -- { import = 'custom.plugins' },
 }, {

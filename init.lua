@@ -248,7 +248,6 @@ require('lazy').setup({
         },
       },
       'WhoIsSethDaniel/mason-tool-installer.nvim',
-      'nvim-java/nvim-java',
       'alesbrelih/gitlab-ci-ls',
       { 'j-hui/fidget.nvim', opts = {} },
       'saghen/blink.cmp',

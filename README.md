@@ -1,252 +1,117 @@
 # Personal Neovim Configuration
 
-A modular Neovim setup for local macOS/Ghostty work and remote Linux editing over SSH. The configuration targets Neovim 0.11+ and uses modern native LSP APIs through `vim.lsp.config()` and `vim.lsp.enable()`.
+This is my personal Neovim configuration, heavily inspired by [kickstart.nvim](https://github.com/nvim-lua/kickstart.nvim). I use it on macOS/Ghostty and remote Linux machines over SSH. Feel free to borrow parts and adapt them to your workflow.
 
-## Supported Environments
+Built around lazy.nvim, native LSP, blink.cmp/LuaSnip, Telescope, conform.nvim, nvim-lint, Treesitter, mini.nvim, Trouble, and Git tools, with Tokyonight Night.
 
-- macOS with Ghostty
-- Remote Linux servers over SSH
-- Ubuntu 24.04 aarch64
-- Shared Git checkout at `~/.config/nvim`
-- Neovim 0.11 minimum, 0.12+ preferred
+## Requirements and installation
 
-## Layout
+- **Neovim 0.12+** for the pinned Treesitter revision; the startup guard only enforces 0.11+.
+- Git, curl, tar, unzip, make, and a C compiler.
+- ripgrep for live grep; fd recommended for file searches (`fd-find` on Ubuntu).
+- Language runtimes as needed: Node.js/npm, Python 3 with venv support, Go, a JDK. Java LSP requires both `java` and `javac` on `PATH`.
+- tree-sitter CLI 0.26.1+ from a package manager, not npm; see [Treesitter requirements](https://github.com/nvim-treesitter/nvim-treesitter/blob/4916d6592ede8c07973490d9322f187e07dfefac/README.md#requirements).
+- A Nerd Font, or set `vim.g.have_nerd_font = false` in `lua/core/globals.lua`.
 
-- `init.lua`: small bootstrap only
-- `lua/core/`: version check, options, clipboard, keymaps, autocmds, lazy.nvim bootstrap
-- `lua/config/languages.lua`: central language/tool registry
-- `lua/plugins/`: plugin specs grouped by responsibility
-- `lua/user/health.lua`: custom `:checkhealth user`
+Install Neovim via a package manager or [official releases](https://github.com/neovim/neovim/releases). Ubuntu 24.04 packages may be too old; choose ARM64 releases for aarch64.
 
-## Install
-
-Install base tools:
+Back up any existing config, then clone (requires GitHub SSH access):
 
 ```sh
-brew install neovim git ripgrep fd node python go openjdk
-```
-
-On Ubuntu:
-
-```sh
-sudo apt update
-sudo apt install -y curl git ripgrep fd-find build-essential unzip nodejs npm python3 python3-venv openjdk-21-jdk
-```
-
-Clone this repository:
-
-```sh
-git clone <repo-url> ~/.config/nvim
-```
-
-Start Neovim:
-
-```sh
+git clone git@github.com:simonbreit-dev/neovim-config.git ~/.config/nvim
 nvim
 ```
 
-Then run:
+lazy.nvim installs itself and plugins on first launch. Run `:Lazy restore` for the committed revisions. Open a source file to trigger Mason's tool installation, then review `:Mason`, `:checkhealth`, and `:checkhealth user`.
+
+Parser installation currently needs an explicit step:
 
 ```vim
-:Lazy sync
-:Mason
-:checkhealth
-:checkhealth user
+:lua require('nvim-treesitter').install(require('config.languages').treesitter)
 ```
 
-## Ubuntu 24.04 aarch64 Neovim
+Wait for installation, then restart. See the Treesitter caveat below.
 
-The Ubuntu package may lag behind this config's target version. Use the official ARM64 tarball:
+## Layout
 
-```sh
-curl -LO https://github.com/neovim/neovim/releases/latest/download/nvim-linux-arm64.tar.gz
-sudo rm -rf /opt/nvim-linux-arm64
-sudo mkdir -p /opt/nvim-linux-arm64
-sudo tar -C /opt/nvim-linux-arm64 --strip-components=1 -xzf nvim-linux-arm64.tar.gz
-sudo ln -sf /opt/nvim-linux-arm64/bin/nvim /usr/local/bin/nvim
-nvim --version
-```
+| Path | Purpose |
+| --- | --- |
+| `init.lua` | Loads the core modules |
+| `lua/core/` | Version check, options, clipboard, keymaps, autocmds, lazy.nvim |
+| `lua/config/languages.lua` | LSP settings, Mason tools, formatter/linter mappings, parser list |
+| `lua/plugins/` | Plugin specs grouped by responsibility |
+| `lua/user/health.lua` | Custom `:checkhealth user` checks |
+| `lazy-lock.json` | Committed plugin revisions |
 
-## Language Support
+## Languages
 
-Language behavior is centralized in `lua/config/languages.lua`.
+`lua/config/languages.lua` declares servers and tools for Mason. Project configuration and runtimes must be available separately.
 
-| Area | LSP | Formatting | Linting |
+| Language | LSP | Formatter preference | External linting |
 | --- | --- | --- | --- |
-| Lua | `lua_ls` | `stylua` | LSP diagnostics |
-| Java | `jdtls` when Java/Javac exist | `google-java-format` | LSP diagnostics |
-| JavaScript/TypeScript | `vtsls` | `prettierd`, `prettier` | `eslint_d`, `eslint` |
-| Svelte | `svelte` | `prettierd`, `prettier` | `eslint_d`, `eslint` |
-| HTML/CSS/SCSS | `html`, `cssls` | `prettierd`, `prettier` | LSP diagnostics |
-| JSON/JSONC | `jsonls` | `prettierd`, `prettier` | LSP diagnostics |
-| YAML/GitLab CI | `yamlls` | `prettierd`, `prettier` | `yamllint` |
-| Markdown | `marksman` | `prettierd`, `prettier` | `markdownlint-cli2`, `markdownlint` |
-| Bash/Zsh | `bashls` | `shfmt` | `shellcheck` |
-| Dockerfile/Compose | `dockerls`, Compose LS | LSP diagnostics | `hadolint`, LSP diagnostics |
-| TOML | `taplo` | `taplo` | LSP diagnostics |
-| XML | `lemminx` | `xmllint` if available | LSP diagnostics |
-| Go | `gopls` | `goimports`, `gofmt` | LSP diagnostics |
-| Python | `pyright`, `ruff` | `ruff_format`, `black` | `ruff` |
+| Lua | `lua_ls` | StyLua | — |
+| Java | `jdtls` (requires a JDK) | google-java-format | — |
+| JavaScript/TypeScript | `vtsls` | prettierd → prettier | eslint_d, eslint |
+| Svelte | `svelte` | prettierd → prettier | eslint_d, eslint |
+| HTML/CSS/SCSS | `html`, `cssls` | prettierd → prettier | — |
+| JSON/JSONC | `jsonls` | prettierd → prettier | — |
+| YAML/GitLab CI | `yamlls` | prettierd → prettier | yamllint |
+| Markdown | `marksman` | prettierd → prettier | markdownlint-cli2, markdownlint |
+| Shell | `bashls` | shfmt | shellcheck |
+| Dockerfile/Compose | `dockerls`, `docker_compose_language_service` | LSP fallback if supported | hadolint (Dockerfile) |
+| TOML | `taplo` | taplo | — |
+| XML | `lemminx` | xmllint (install separately) | — |
+| Go | `gopls` | goimports → gofmt | — |
+| Python | `pyright`, `ruff` | ruff_format → black | ruff |
 
-Treesitter parsers are installed for the same language set where useful.
+Arrows select the first available formatter. All available external linters run alongside LSP diagnostics; availability is checked at plugin load. Zsh mappings exist, but bashls/shellcheck do not fully support Zsh.
 
-## Formatting
+## Everyday use
 
-Formatting is handled by `conform.nvim`.
+Leader/local leader: **Space**. Browse mappings with `:Telescope keymaps` or which-key.
 
-- Format on save is enabled by default.
-- Toggle per buffer with `<leader>tf`.
-- Format manually with `<leader>cf`.
-- Missing formatters are ignored instead of crashing startup.
+| Key / command | Action |
+| --- | --- |
+| `<leader>sf`, `<leader>sg`, `<leader><leader>` | Find files, live grep, switch buffers |
+| `<leader>e` | mini.files explorer |
+| `<leader>cf` | Format buffer or selection |
+| `<leader>tf`, `<leader>tl` | Toggle buffer format-on-save / global linting |
+| `grd`, `grr`, `gri`, `grt` | LSP definition, references, implementation, type definition |
+| `grn`, `gra`, `K`, `<leader>th` | Rename, code action, hover, toggle supported inlay hints |
+| `<leader>gg`, `<leader>gv`, `<leader>gh` | Git status, diff view, current file history |
+| `]c`, `[c`, `<leader>gp` | Next/previous Git hunk, preview hunk |
+| `<leader>xx`, `<leader>xX` | Trouble diagnostics / current buffer diagnostics |
+| `:ConformInfo`, `:Mason` | Inspect formatting / installed language tools |
 
-Global disable:
+Formatting runs on save by default, except for C/C++, with LSP formatting as a fallback. Disable it globally with `:lua vim.g.format_on_save = false`, or for the current buffer with `:lua vim.b.format_on_save = false`.
 
-```vim
-:lua vim.g.format_on_save = false
-```
+Linting runs on buffer read, write, and insert leave. `:lua vim.g.lint_on_events = false` disables it, including the current manual lint callback. Restart Neovim after installing a previously missing linter so it is picked up.
 
-## Linting
+## Clipboard over SSH
 
-Linting is handled by `nvim-lint`.
+Local sessions use `unnamedplus`. With `SSH_TTY` or `SSH_CONNECTION`, OSC52 copies to the local clipboard through the terminal. Remote paste depends on terminal policy.
 
-- Linting runs on read, write, and insert leave.
-- Missing linter executables are filtered out at startup.
-- Run manually with `<leader>cl`.
-- Toggle event-based linting with `<leader>tl`.
-
-## LSP
-
-Servers are configured with Neovim's native 0.11+ APIs. `nvim-lspconfig` is used for server definitions, not for deprecated `require('lspconfig').SERVER.setup()` calls.
-
-Completion capabilities come from `blink.cmp`.
-
-Useful LSP mappings:
-
-- `grd`: definition
-- `grr`: references
-- `gri`: implementation
-- `grt`: type definition
-- `grn`: rename
-- `gra`: code action
-- `K`: hover
-- `<leader>th`: toggle inlay hints when supported
-
-## Java Notes
-
-Java support uses `jdtls` directly through native LSP config. It is only enabled when both `java` and `javac` are available, so servers without a JDK can still start Neovim normally.
-
-Install a JDK before working on Java:
-
-```sh
-java -version
-javac -version
-```
-
-JDK 21 is a good default for current Java work. Mason installs the `jdtls` package, and `google-java-format` is used for formatting.
-
-## Clipboard and OSC52
-
-Local macOS sessions use the normal system clipboard. SSH sessions are detected with `SSH_TTY` or `SSH_CONNECTION`; in those sessions the config sets:
-
-```lua
-vim.g.clipboard = 'osc52'
-vim.o.clipboard = 'unnamedplus'
-```
-
-This lets yanks travel from a remote Neovim session to the local terminal clipboard when the terminal path allows OSC52.
-
-Ghostty supports OSC52. If tmux is in the path, ensure tmux allows clipboard passthrough:
+tmux may need:
 
 ```tmux
 set -g set-clipboard on
 set -g allow-passthrough on
 ```
 
-Test inside SSH:
+Test with `:let @+ = 'osc52-test'`, then paste locally. If it fails, try without tmux and check terminal settings.
 
-```vim
-:let @+ = 'osc52-test'
-```
+## Current caveats
 
-Then paste locally. If it does not work, test without tmux first, then check Ghostty and tmux clipboard settings.
-
-## Plugin Decisions
-
-Kept:
-
-- `telescope.nvim` for fuzzy finding
-- `gitsigns.nvim`, `vim-fugitive`, `diffview.nvim` for Git
-- `blink.cmp` and `LuaSnip` for completion/snippets
-- `conform.nvim` for formatting
-- `nvim-lint` for linting
-- `nvim-treesitter` for syntax
-- `trouble.nvim` for diagnostics UI
-- `mini.files`, `mini.ai`, `mini.surround` for focused editor features
-- `Comment.nvim`, `nvim-autopairs`, `todo-comments.nvim`
-- `tokyonight.nvim`, `mini.statusline`
-
-Removed:
-
-- Kickstart tutorial docs and example modules
-- DAP example stack, because it was unused tutorial code and not production-ready
-- Duplicate Git/lint/plugin declarations
-- Empty npm lockfile
-- Extra theme plugins that were installed but inactive
-- `cutlass.nvim`, because changing delete semantics globally is a personal editing policy rather than a core production requirement
-- `vim-alloy`, because it is niche and should be re-added only if Alloy files are actively edited
+- **Treesitter:** the `main` spec does not install its parser list: `ensure_installed` is unused. Install explicitly as above. Upstream [does not support lazy loading](https://github.com/nvim-treesitter/nvim-treesitter/blob/4916d6592ede8c07973490d9322f187e07dfefac/README.md#installation), but this spec uses buffer events; first-buffer highlighting may be unreliable.
+- **Format toggle:** with an unset buffer setting, the first `<leader>tf` press keeps formatting enabled. Press again or use the explicit setting above.
+- **Mapping collision:** `<leader>cl` means Trouble LSP or manual lint, depending on load order. Use `:Trouble lsp toggle` or `:lua require('lint').try_lint()` explicitly.
 
 ## Maintenance
 
-Update plugins:
+Update plugins with `:Lazy sync`, review `lazy-lock.json`, or restore with `:Lazy restore`. Update installed parsers with `:TSUpdate`. Review `:Mason` and health checks after dependency changes.
 
-```vim
-:Lazy sync
-```
+Check Lua with `stylua --check .`; format with `stylua .` using `.stylua.toml`. CI checks pull requests and pushes to `main`; direct pushes to the current default branch, `master`, are not checked.
 
-Review installed tools:
+## License
 
-```vim
-:Mason
-```
-
-Run health checks:
-
-```vim
-:checkhealth
-:checkhealth user
-```
-
-Format Lua:
-
-```sh
-stylua .
-```
-
-Check Lua syntax without starting the UI:
-
-```sh
-nvim --headless "+lua print('ok')" +qa
-```
-
-## Troubleshooting
-
-If Neovim fails before plugins load, check the version:
-
-```sh
-nvim --version
-```
-
-If a language server is missing, open `:Mason` and install or repair the relevant package.
-
-If formatting does nothing, run `:ConformInfo` in the buffer.
-
-If linting does nothing, verify the executable is on `PATH`:
-
-```sh
-eslint_d --version
-shellcheck --version
-yamllint --version
-ruff --version
-```
-
-If Java LSP does not start, verify a JDK is installed and visible to the remote shell running Neovim.
+[MIT](LICENSE.md), as in the original kickstart.nvim project.

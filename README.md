@@ -1,6 +1,6 @@
 # Personal Neovim Configuration
 
-This is my personal Neovim configuration, heavily inspired by [kickstart.nvim](https://github.com/nvim-lua/kickstart.nvim). I use it on macOS/Ghostty and remote Linux machines over SSH. Feel free to borrow parts and adapt them to your workflow.
+This is my personal Neovim configuration, it was initially forked from [kickstart.nvim](https://github.com/nvim-lua/kickstart.nvim). I use it on macOS/Ghostty and remote Linux machines over SSH. Feel free to borrow parts and adapt them to your workflow.
 
 Built around lazy.nvim, native LSP, blink.cmp/LuaSnip, Telescope, conform.nvim, nvim-lint, Treesitter, mini.nvim, Trouble, and Git tools, with Tokyonight Night.
 

@@ -2,7 +2,7 @@
 
 This is my personal Neovim configuration, it was initially forked from [kickstart.nvim](https://github.com/nvim-lua/kickstart.nvim). I use it on macOS/Ghostty and remote Linux machines over SSH. Feel free to borrow parts and adapt them to your workflow.
 
-Built around lazy.nvim, native LSP, blink.cmp/LuaSnip, Telescope, conform.nvim, nvim-lint, Treesitter, mini.nvim, Trouble, and Git tools, with Tokyonight Night.
+Built around lazy.nvim, native LSP, blink.cmp/LuaSnip, Telescope, conform.nvim, nvim-lint, Treesitter, mini.nvim, Trouble, and Git tools. The local `material-darker-custom` colorscheme is converted from the custom Rider/IntelliJ `Material_Darker.icls` export, with no theme plugin or runtime dependencies.
 
 ## Requirements and installation
 
@@ -36,6 +36,9 @@ On macOS, the config discovers Homebrew's keg-only JDK and repairs a missing/sta
 | `lua/plugins/` | Plugin specs grouped by responsibility |
 | `lua/user/health.lua` | Custom `:checkhealth user` checks |
 | `lazy-lock.json` | Committed plugin revisions |
+| `colors/material-darker-custom.lua` | Static colors and highlight mappings from the custom `.icls` export |
+
+The theme preserves the exported `TEXT` background (`#191A1C`), foreground (`#EEFFFF`), selection colors, italic styles, and language-specific colors where Neovim has matching syntax or LSP categories. The line-number, sign, and fold columns use the editor background. Unexported/inherited IntelliJ categories use the exported language defaults. Editor and terminal highlighting categories differ, so the result is an approximation rather than an exact IntelliJ rendering. Font family, size, ligatures, and line spacing remain controlled by the terminal. The original `.icls` is not read at startup; editing it requires updating the local theme.
 
 ## Languages
 

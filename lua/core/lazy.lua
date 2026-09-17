@@ -16,7 +16,7 @@ require('lazy').setup {
   },
   change_detection = { notify = false },
   checker = { enabled = true, notify = false },
-  install = { colorscheme = { 'tokyonight', 'habamax' } },
+  install = { colorscheme = { 'material-darker-custom', 'habamax' } },
   ui = {
     border = 'rounded',
     icons = vim.g.have_nerd_font and {} or {

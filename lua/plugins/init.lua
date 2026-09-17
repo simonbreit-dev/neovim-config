@@ -6,6 +6,7 @@ return {
   { import = 'plugins.git' },
   { import = 'plugins.telescope' },
   { import = 'plugins.lsp' },
+  { import = 'plugins.tools' },
   { import = 'plugins.completion' },
   { import = 'plugins.format' },
   { import = 'plugins.lint' },

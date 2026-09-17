@@ -11,6 +11,24 @@ local function supports(client, method, bufnr)
 end
 
 local function setup_lsp_attach()
+  local highlight_group = vim.api.nvim_create_augroup('user-lsp-highlight', { clear = true })
+  vim.api.nvim_create_autocmd('LspDetach', {
+    group = vim.api.nvim_create_augroup('user-lsp-detach', { clear = true }),
+    callback = function(event)
+      vim.schedule(function()
+        if not vim.api.nvim_buf_is_valid(event.buf) then
+          return
+        end
+        for _, client in ipairs(vim.lsp.get_clients { bufnr = event.buf }) do
+          if client.id ~= event.data.client_id and supports(client, vim.lsp.protocol.Methods.textDocument_documentHighlight, event.buf) then
+            return
+          end
+        end
+        vim.api.nvim_buf_call(event.buf, vim.lsp.buf.clear_references)
+        vim.api.nvim_clear_autocmds { group = highlight_group, buffer = event.buf }
+      end)
+    end,
+  })
   vim.api.nvim_create_autocmd('LspAttach', {
     group = vim.api.nvim_create_augroup('user-lsp-attach', { clear = true }),
     callback = function(event)
@@ -38,25 +56,20 @@ local function setup_lsp_attach()
       end
 
       local client = vim.lsp.get_client_by_id(event.data.client_id)
+      if client and client.name == 'ruff' then
+        client.server_capabilities.hoverProvider = false
+      end
       if supports(client, vim.lsp.protocol.Methods.textDocument_documentHighlight, event.buf) then
-        local group = vim.api.nvim_create_augroup('user-lsp-highlight', { clear = false })
+        vim.api.nvim_clear_autocmds { group = highlight_group, buffer = event.buf }
         vim.api.nvim_create_autocmd({ 'CursorHold', 'CursorHoldI' }, {
           buffer = event.buf,
-          group = group,
+          group = highlight_group,
           callback = vim.lsp.buf.document_highlight,
         })
         vim.api.nvim_create_autocmd({ 'CursorMoved', 'CursorMovedI' }, {
           buffer = event.buf,
-          group = group,
+          group = highlight_group,
           callback = vim.lsp.buf.clear_references,
-        })
-        vim.api.nvim_create_autocmd('LspDetach', {
-          buffer = event.buf,
-          group = vim.api.nvim_create_augroup('user-lsp-detach', { clear = false }),
-          callback = function(detach_event)
-            vim.lsp.buf.clear_references()
-            vim.api.nvim_clear_autocmds { group = group, buffer = detach_event.buf }
-          end,
         })
       end
 
@@ -74,10 +87,7 @@ local function configure_diagnostics()
     severity_sort = true,
     float = { border = 'rounded', source = 'if_many' },
     underline = true,
-    virtual_text = {
-      source = 'if_many',
-      spacing = 2,
-    },
+    virtual_text = require('user.editing').diagnostic_text(),
     signs = vim.g.have_nerd_font and {
       text = {
         [vim.diagnostic.severity.ERROR] = '󰅚 ',
@@ -107,10 +117,11 @@ local function configure_servers()
       server_config.condition = nil
       server_config.capabilities = vim.tbl_deep_extend('force', {}, capabilities, server_config.capabilities or {})
 
-      local ok, err = pcall(vim.lsp.config, name, server_config)
-      if ok then
-        pcall(vim.lsp.enable, name)
-      else
+      local ok, err = pcall(function()
+        vim.lsp.config(name, server_config)
+        vim.lsp.enable(name)
+      end)
+      if not ok then
         vim.schedule(function()
           vim.notify(('Skipping LSP server %s: %s'):format(name, err), vim.log.levels.WARN)
         end)
@@ -124,8 +135,7 @@ return {
     'neovim/nvim-lspconfig',
     event = { 'BufReadPre', 'BufNewFile' },
     dependencies = {
-      { 'mason-org/mason.nvim', opts = { ui = { border = 'rounded' } } },
-      'WhoIsSethDaniel/mason-tool-installer.nvim',
+      'mason-org/mason.nvim',
       'saghen/blink.cmp',
     },
     config = function()
@@ -133,15 +143,16 @@ return {
       configure_diagnostics()
       configure_servers()
 
-      local ok, installer = pcall(require, 'mason-tool-installer')
-      if ok then
-        installer.setup {
-          ensure_installed = languages.mason_ensure_installed(),
-          auto_update = false,
-          run_on_start = true,
-          start_delay = 3000,
-        }
-      end
+      vim.api.nvim_create_autocmd('User', {
+        group = vim.api.nvim_create_augroup('user-lsp-tools-installed', { clear = true }),
+        pattern = 'MasonToolsUpdateCompleted',
+        callback = function()
+          configure_servers()
+          if package.loaded.lint then
+            require('user.lint').run(vim.api.nvim_get_current_buf())
+          end
+        end,
+      })
     end,
   },
 }

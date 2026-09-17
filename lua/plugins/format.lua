@@ -15,7 +15,7 @@ local function format_on_save(bufnr)
   end
 
   return {
-    timeout_ms = 1500,
+    timeout_ms = 3000,
     lsp_format = 'fallback',
   }
 end
@@ -37,17 +37,32 @@ return {
       {
         '<leader>tf',
         function()
-          vim.b.format_on_save = not (vim.b.format_on_save == false)
-          vim.notify('Format on save ' .. (vim.b.format_on_save == false and 'disabled' or 'enabled'))
+          if vim.g.format_on_save == false then
+            vim.notify('Format on save is disabled globally; set vim.g.format_on_save = true to enable it.', vim.log.levels.WARN)
+            return
+          end
+          vim.b.format_on_save = vim.b.format_on_save == false
+          vim.notify('Format on save ' .. (vim.b.format_on_save and 'enabled' or 'disabled'))
         end,
         desc = 'Toggle format on save',
       },
     },
     opts = {
-      notify_on_error = false,
+      notify_on_error = true,
       notify_no_formatters = false,
       format_on_save = format_on_save,
       formatters_by_ft = languages.formatters_by_ft,
+      formatters = {
+        prettier_svelte = {
+          inherit = 'prettier',
+          condition = function(_, ctx)
+            return require('user.node').svelte_formatter(ctx.dirname) ~= nil
+          end,
+          prepend_args = function(_, ctx)
+            return { '--plugin', require('user.node').svelte_formatter(ctx.dirname) }
+          end,
+        },
+      },
     },
   },
 }

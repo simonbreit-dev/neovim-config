@@ -2,6 +2,7 @@ local M = {}
 
 M.treesitter = {
   'bash',
+  'c_sharp',
   'css',
   'diff',
   'dockerfile',
@@ -37,6 +38,13 @@ M.treesitter = {
 }
 
 M.lsp = {
+  csharp_ls = {
+    mason = 'csharp-language-server',
+    settings = { csharp = { analyzersEnabled = true } },
+    condition = function()
+      return vim.fn.executable 'dotnet' == 1
+    end,
+  },
   lua_ls = {
     mason = 'lua-language-server',
     settings = {
@@ -50,9 +58,20 @@ M.lsp = {
   },
   vtsls = {
     mason = 'vtsls',
+    before_init = function(_, config)
+      local _, root = require('user.node').svelte_package('typescript-svelte-plugin', config.root_dir)
+      config.settings.vtsls.tsserver.globalPlugins = root
+          and { { name = 'typescript-svelte-plugin', location = root, enableForWorkspaceTypeScriptVersions = true } }
+        or {}
+    end,
     settings = {
       vtsls = {
         autoUseWorkspaceTsdk = true,
+        tsserver = {
+          globalPlugins = {
+            { name = 'typescript-svelte-plugin', enableForWorkspaceTypeScriptVersions = true },
+          },
+        },
         experimental = { completion = { enableServerSideFuzzyMatch = true } },
       },
       typescript = {
@@ -79,7 +98,10 @@ M.lsp = {
   },
   dockerls = { mason = 'dockerfile-language-server' },
   docker_compose_language_service = { mason = 'docker-compose-language-service' },
-  bashls = { mason = 'bash-language-server' },
+  bashls = {
+    mason = 'bash-language-server',
+    settings = { bashIde = { shellcheckPath = '' } },
+  },
   taplo = { mason = 'taplo' },
   lemminx = { mason = 'lemminx' },
   marksman = { mason = 'marksman' },
@@ -96,6 +118,7 @@ M.lsp = {
   pyright = {
     mason = 'pyright',
     settings = {
+      pyright = { disableOrganizeImports = true },
       python = { analysis = { typeCheckingMode = 'basic' } },
     },
   },
@@ -103,6 +126,15 @@ M.lsp = {
   jdtls = {
     mason = 'jdtls',
     filetypes = { 'java' },
+    cmd = function(dispatchers, config)
+      local root = config.root_dir or vim.uv.cwd()
+      local workspace = vim.fs.joinpath(vim.fn.stdpath 'cache', 'jdtls', vim.fn.sha256(root):sub(1, 16))
+      local cmd = { 'jdtls', '-data', workspace }
+      for arg in (vim.env.JDTLS_JVM_ARGS or ''):gmatch '%S+' do
+        table.insert(cmd, '--jvm-arg=' .. arg)
+      end
+      return vim.lsp.rpc.start(cmd, dispatchers, { cwd = config.cmd_cwd or root, env = config.cmd_env, detached = config.detached })
+    end,
     condition = function()
       return vim.fn.executable 'java' == 1 and vim.fn.executable 'javac' == 1
     end,
@@ -113,8 +145,10 @@ M.mason_tools = {
   'black',
   'eslint_d',
   'goimports',
+  'gofumpt',
   'google-java-format',
   'hadolint',
+  'htmlhint',
   'markdownlint-cli2',
   'prettier',
   'prettierd',
@@ -132,14 +166,13 @@ M.formatters_by_ft = {
   java = { 'google-java-format' },
   sh = { 'shfmt' },
   bash = { 'shfmt' },
-  zsh = { 'shfmt' },
-  go = { 'goimports', 'gofmt', stop_after_first = true },
+  go = { 'goimports', 'gofumpt' },
   python = { 'ruff_format', 'black', stop_after_first = true },
   javascript = prettier,
   javascriptreact = prettier,
   typescript = prettier,
   typescriptreact = prettier,
-  svelte = prettier,
+  svelte = { 'prettier_svelte' },
   html = prettier,
   css = prettier,
   scss = prettier,
@@ -154,19 +187,18 @@ M.formatters_by_ft = {
 }
 
 M.linters_by_ft = {
-  javascript = { 'eslint_d', 'eslint' },
-  javascriptreact = { 'eslint_d', 'eslint' },
-  typescript = { 'eslint_d', 'eslint' },
-  typescriptreact = { 'eslint_d', 'eslint' },
-  svelte = { 'eslint_d', 'eslint' },
+  html = { 'htmlhint' },
+  javascript = { 'eslint', 'eslint_d' },
+  javascriptreact = { 'eslint', 'eslint_d' },
+  typescript = { 'eslint', 'eslint_d' },
+  typescriptreact = { 'eslint', 'eslint_d' },
+  svelte = { 'eslint', 'eslint_d' },
   yaml = { 'yamllint' },
   ['yaml.gitlab'] = { 'yamllint' },
   markdown = { 'markdownlint-cli2', 'markdownlint' },
   sh = { 'shellcheck' },
   bash = { 'shellcheck' },
-  zsh = { 'shellcheck' },
   dockerfile = { 'hadolint' },
-  python = { 'ruff' },
 }
 
 function M.mason_ensure_installed()

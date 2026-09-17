@@ -1,4 +1,4 @@
-local minimum = { 0, 11, 0 }
+local minimum = { 0, 12, 0 }
 local version = vim.version()
 
 if vim.version.lt(version, minimum) then
@@ -9,3 +9,5 @@ if vim.version.lt(version, minimum) then
   end)
   error(('Neovim >= %s required, found %s'):format(required, current))
 end
+
+return minimum

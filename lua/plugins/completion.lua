@@ -33,7 +33,10 @@ return {
       appearance = { nerd_font_variant = 'mono' },
       completion = {
         documentation = { auto_show = false, auto_show_delay_ms = 500 },
-        menu = { border = 'rounded' },
+        menu = {
+          border = 'rounded',
+          draw = vim.g.have_nerd_font and {} or { columns = { { 'label', 'label_description', gap = 1 }, { 'kind' } } },
+        },
       },
       signature = { enabled = true, window = { border = 'rounded' } },
       snippets = { preset = 'luasnip' },

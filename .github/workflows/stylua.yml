@@ -1,9 +1,9 @@
-name: Check Lua Formatting
+name: Check Configuration
 
 on:
   pull_request:
   push:
-    branches: [main]
+    branches: [main, master]
 
 jobs:
   stylua-check:
@@ -18,3 +18,19 @@ jobs:
         with:
           version: latest
           args: --check .
+
+  smoke-test:
+    name: Headless Regression Checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install Neovim
+        uses: rhysd/action-setup-vim@v1
+        with:
+          neovim: true
+          version: v0.12.5
+      - name: Check startup, linting, mappings, and Git selections
+        env:
+          NVIM_TEST_INSTALL: '1'
+        run: nvim --headless -u NONE -l tests/smoke.lua

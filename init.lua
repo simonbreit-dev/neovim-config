@@ -1,4 +1,5 @@
 require 'core.version'
+require 'core.runtime'
 require 'core.globals'
 require 'core.options'
 require 'core.clipboard'

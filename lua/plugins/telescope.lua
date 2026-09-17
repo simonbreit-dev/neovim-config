@@ -1,3 +1,9 @@
+local function picker(name, opts)
+  return function()
+    require('telescope.builtin')[name](opts)
+  end
+end
+
 return {
   {
     'nvim-telescope/telescope.nvim',
@@ -14,28 +20,25 @@ return {
       'nvim-telescope/telescope-ui-select.nvim',
       'nvim-tree/nvim-web-devicons',
     },
-    keys = function()
-      local builtin = require 'telescope.builtin'
-      return {
-        { '<leader><leader>', builtin.buffers, desc = 'Buffers' },
-        { '<leader>/', builtin.current_buffer_fuzzy_find, desc = 'Search buffer' },
-        { '<leader>sf', builtin.find_files, desc = 'Files' },
-        { '<leader>sg', builtin.live_grep, desc = 'Grep' },
-        { '<leader>sw', builtin.grep_string, desc = 'Word under cursor' },
-        { '<leader>sd', builtin.diagnostics, desc = 'Diagnostics' },
-        { '<leader>sh', builtin.help_tags, desc = 'Help' },
-        { '<leader>sk', builtin.keymaps, desc = 'Keymaps' },
-        { '<leader>sr', builtin.resume, desc = 'Resume search' },
-        { '<leader>s.', builtin.oldfiles, desc = 'Recent files' },
-        {
-          '<leader>sn',
-          function()
-            builtin.find_files { cwd = vim.fn.stdpath 'config' }
-          end,
-          desc = 'Neovim config',
-        },
-      }
-    end,
+    keys = {
+      { '<leader><leader>', picker 'buffers', desc = 'Buffers' },
+      { '<leader>/', picker 'current_buffer_fuzzy_find', desc = 'Search buffer' },
+      { '<leader>sf', picker 'find_files', desc = 'Files' },
+      { '<leader>sg', picker 'live_grep', desc = 'Grep' },
+      { '<leader>sw', picker 'grep_string', desc = 'Word under cursor' },
+      { '<leader>sd', picker 'diagnostics', desc = 'Diagnostics' },
+      { '<leader>sh', picker 'help_tags', desc = 'Help' },
+      { '<leader>sk', picker 'keymaps', desc = 'Keymaps' },
+      { '<leader>sr', picker 'resume', desc = 'Resume search' },
+      { '<leader>s.', picker 'oldfiles', desc = 'Recent files' },
+      {
+        '<leader>sn',
+        function()
+          require('telescope.builtin').find_files { cwd = vim.fn.stdpath 'config' }
+        end,
+        desc = 'Neovim config',
+      },
+    },
     opts = function()
       local actions = require 'telescope.actions'
       return {

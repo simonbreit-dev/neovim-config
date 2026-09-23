@@ -84,13 +84,18 @@ M.lsp = {
   html = { mason = 'html-lsp' },
   cssls = { mason = 'css-lsp' },
   jsonls = { mason = 'json-lsp' },
+  gh_actions_ls = {
+    -- Mason's historical package name now installs the official @actions/languageserver.
+    mason = 'gh-actions-language-server',
+    cmd = { 'actions-languageserver', '--stdio' },
+    filetypes = { 'yaml.ghactions' },
+  },
   yamlls = {
     mason = 'yaml-language-server',
     settings = {
       yaml = {
         keyOrdering = false,
         schemas = {
-          ['https://json.schemastore.org/github-workflow.json'] = '/.github/workflows/*',
           ['https://json.schemastore.org/gitlab-ci.json'] = { '/*.gitlab-ci.yml', '/*.gitlab-ci.yaml' },
         },
       },
@@ -142,6 +147,7 @@ M.lsp = {
 }
 
 M.mason_tools = {
+  'actionlint',
   'black',
   'eslint_d',
   'goimports',
@@ -179,6 +185,7 @@ M.formatters_by_ft = {
   json = prettier,
   jsonc = prettier,
   yaml = prettier,
+  ['yaml.ghactions'] = prettier,
   ['yaml.gitlab'] = prettier,
   markdown = prettier,
   ['markdown.mdx'] = prettier,
@@ -194,6 +201,7 @@ M.linters_by_ft = {
   typescriptreact = { 'eslint', 'eslint_d' },
   svelte = { 'eslint', 'eslint_d' },
   yaml = { 'yamllint' },
+  ['yaml.ghactions'] = { 'actionlint' },
   ['yaml.gitlab'] = { 'yamllint' },
   markdown = { 'markdownlint-cli2', 'markdownlint' },
   sh = { 'shellcheck' },

@@ -1,6 +1,13 @@
 local augroup = vim.api.nvim_create_augroup
 local autocmd = vim.api.nvim_create_autocmd
 
+vim.filetype.add {
+  pattern = {
+    ['.*/%.github/workflows/[^/]+%.yml'] = 'yaml.ghactions',
+    ['.*/%.github/workflows/[^/]+%.yaml'] = 'yaml.ghactions',
+  },
+}
+
 autocmd('BufWinEnter', {
   desc = 'Restore the last cursor position when opening a file',
   group = augroup('user-restore-cursor', { clear = true }),

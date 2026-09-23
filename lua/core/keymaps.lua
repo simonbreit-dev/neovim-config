@@ -1,5 +1,9 @@
 local map = vim.keymap.set
 
+-- Delete into the black-hole register so yanked text stays available for paste.
+map({ 'n', 'x' }, 'd', '"_d', { desc = 'Delete without copying' })
+map({ 'n', 'x' }, 'D', '"_D', { desc = 'Delete without copying' })
+
 vim.api.nvim_create_user_command('QuickHelp', function()
   require('user.help').open()
 end, { desc = 'Quick editing help' })

@@ -9,6 +9,7 @@ return {
     config = function()
       local ts = require 'nvim-treesitter'
       ts.setup()
+      vim.treesitter.language.register('yaml', 'yaml.ghactions')
 
       local function start(bufnr)
         if not vim.api.nvim_buf_is_loaded(bufnr) or vim.bo[bufnr].buftype ~= '' then

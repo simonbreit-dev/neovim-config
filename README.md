@@ -55,6 +55,7 @@ The theme preserves the exported `TEXT` background (`#191A1C`), foreground (`#EE
 | CSS/SCSS | `cssls` | prettierd → prettier | CSS validation via LSP |
 | JSON/JSONC | `jsonls` | prettierd → prettier | — |
 | YAML/GitLab CI | `yamlls` | prettierd → prettier | yamllint |
+| GitHub Actions | `gh_actions_ls` (official `@actions/languageserver`) | prettierd → prettier | actionlint |
 | Markdown | `marksman` | prettierd → prettier | markdownlint-cli2, markdownlint |
 | Shell | `bashls` | shfmt | shellcheck |
 | Dockerfile/Compose | `dockerls`, `docker_compose_language_service` | Prettier for Compose; LSP fallback otherwise | hadolint (Dockerfile) |
@@ -68,6 +69,16 @@ Arrows select the first available tool. External linter alternatives run once pe
 Java and C# need recognizable Maven/Gradle or solution/project files for full project diagnostics. Restore .NET dependencies (`dotnet restore`) when necessary. JSON and YAML validation uses language-server schemas; HTMLHint supplies HTML checks and cssls validates CSS.
 
 JS/TS and Svelte linting requires a project ESLint configuration and its dependencies. Flat configurations are supported, including Svelte parser/plugin configuration from the project. Prettier uses project versions and settings where available. For Svelte formatting and TS integration, project Svelte plugins take precedence over the copies bundled with Mason's Svelte language server. Generate SvelteKit types (`npx svelte-kit sync`, usually run by the project's prepare script) before expecting route and `$types` diagnostics.
+
+### GitHub Actions
+
+Files directly inside `.github/workflows/` ending in `.yml` or `.yaml` use `yaml.ghactions`. They share the YAML Treesitter parser and Prettier formatting. The official [Actions language server](https://github.com/actions/languageservices/tree/main/languageserver) runs over stdio through `gh_actions_ls`; yamlls stays on ordinary YAML and GitLab CI. actionlint replaces yamllint for workflows. Both Actions tools may report overlapping workflow errors, but generic YAML schema/lint diagnostics are excluded.
+
+The existing Mason installer manages `actionlint` and `gh-actions-language-server` (the registry's historical name for official `@actions/languageserver`). No separate npm installation or GitHub token is required for basic completion and validation. Node.js/npm and the existing tree-sitter CLI requirement still apply.
+
+Run `:MasonToolsInstall`, then open a workflow and check `:set filetype?`, `:checkhealth vim.lsp`, `:InspectTree`, and `:ConformInfo`. Use `<leader>cl` to lint and `:lua vim.diagnostic.setloclist()` to inspect diagnostics. Repeat with ordinary `config.yml`: it should use `yaml`, yamlls, and yamllint.
+
+Run `nvim --headless -u NONE -i NONE -l scripts/check-ghactions.lua` from the config directory for integration checks using installed plugins, the YAML parser/queries, and Mason tools. It checks both extensions, actual highlighting attachment, expression completion/diagnostics, actionlint, ordinary YAML linting, formatter selection, and existing LSP registration. Automatic installation and plugin update checks are disabled during the test.
 
 ## Everyday use
 
